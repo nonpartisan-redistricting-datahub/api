@@ -1,0 +1,104 @@
+# Bulk Download API
+
+Ability for administrative-level users to make bulk downloads of the files offered for each state.
+
+
+## Authentication
+
+All endpoints accept params `&username=` and `&password=` which are the username and password to log in.
+
+The resulting combination must be valid to log in to Wordpress, and the user must have `download-api` permission. That is, they must be assigned the **API Download user** role in WP Admin.
+
+
+## Escaping URL params
+
+All URL params must be encoded in the usual fashion, e.g. %20 or + in lieu of spaces.
+
+Example of encoding special characters in password:
+
+```
+?username=testperson&password=My%20Secret%20Password
+```
+
+For more information see https://www.w3schools.com/tags/ref_urlencode.ASP and https://www.urlencoder.org/
+
+
+## Listing Files
+
+URL: `https://redistrictingdatahub.org/wp-json/download/list`
+
+Returns a list of all files currently offered on the website, in a variety of formats.
+
+Params:
+
+* `&username=` -- Login credentials, as described above. _Required._
+* `&password=` -- Login credentials, as described above. _Required._
+* `&format=` -- The format of the returned listing. Any of: `json` `csv` _Required._
+* `&states=` -- Comma-joined list of state names and state postal codes, to filter. _Required._
+* `&keywords=` -- Comma-joined list of keywords, to filter against the dataset's title. _Optional._
+
+Return:
+
+* Varies depending on the `&format=` parameter. See Examples below.
+
+Notes:
+
+* A maximum of 1,000 downloads will be presented in the listing, and a maximum of 1,000 Datasets will be examined for matching downloads. If you suspect that some files are not present in the listing, consider filtering more tightly by keyword and/or using fewer states in your query.
+* The keywords search uses Wordpress's built-in search on the post title and the description, and is not very smart. A search for "2016, 2018" will not intelligently find all datasets tagged by either year, but would match only datasets with both phrases in the title. If you need something smarter to filter by download file type, etc. consider filtering the list client-side.
+
+Examples:
+
+```
+# return the list as a JSON-encoded array
+curl --output filelist.json 'https://redistrictingdatahub.org/wp-json/download/list?username=X&password=X&format=json&states=ca,or,wa,nv,ut,az,id'
+
+# return the list as CSV text
+curl --output filelist.csv 'https://redistrictingdatahub.org/wp-json/download/list?username=X&password=X&format=csv&states=ca,or,wa,nv,ut,az,id'
+
+# as above, but adding keyword filtering
+curl --output filelist.json 'https://redistrictingdatahub.org/wp-json/download/list?username=X&password=X&format=json&states=ca,or,wa,nv,ut,az,id&keywords=census tract,population,2018'
+```
+
+
+## Downloading a File
+
+URL: `https://redistrictingdatahub.org/wp-json/download/file/FILENAME`
+
+Downloads a file by giving a redirect. If the file is on the private S3 bucket, then the redirect will be to a S3-signed URl good for 5 minutes. Otherwise, the redirect is simply to the file on the remote website.
+
+Params:
+
+* `&username=` -- Login credentials, as described above.
+* `&password=` -- Login credentials, as described above.
+* The FILENAME is specified in the URL, and not as a query string parameter.
+
+Return:
+
+* None. A redirect is given to the stated file, and it is expected that the cller will follow the redirect and download the file.
+
+Examples:
+
+```
+curl --location --output output_filename.zip 'https://redistrictingdatahub.org/wp-json/download/file/the_filename.zip?username=X&password=X'
+```
+
+See the listing output for examples.
+
+
+## Other Limitations & Caveats
+
+### Files Listing is Based on Website Content
+
+The files listed by the `download/list` API is is not directly based on the contents of the S3 bucket. It is a listing of files set up to be offered on State pages.
+
+This means a few caveats:
+
+* Files may be present on S3 which are not offered on any of the State pages. These files would not be present in the API listing. However, if you know the file path then you could still download it via the `download/file` API.
+* If a file's URL is entered incorrectly and does not match a real file URL on S3, the listing will still contain this incorrect URL, and of course download will fail.
+
+### Plugin Compatiblity
+
+Some security enhancement plugins may cause incompatibility, as they try to protect the API endpoints.
+
+The **Password Protected** plugin, by default has _Allow REST API Access_ turned off and will result in a code 401 "Only authenticated users can access the REST API." Enable this option to enable API requests outside of Wordpress.
+
