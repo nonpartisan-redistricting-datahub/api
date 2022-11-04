@@ -34,7 +34,7 @@ Params:
 * `&username=` -- Login credentials, as described above. _Required._
 * `&password=` -- Login credentials, as described above. _Required._
 * `&format=` -- The format of the returned listing. Any of: `json` `csv` _Required._
-* `&states=` -- Comma-joined list of state names and state postal codes, to filter. _Required._
+* `&datasetid=` -- Comma-joined list of datasetids, to filter. _Required._
 * `&keywords=` -- Comma-joined list of keywords, to filter against the dataset's title. _Optional._
 
 Return:
@@ -45,19 +45,6 @@ Notes:
 
 * A maximum of 1,000 downloads will be presented in the listing, and a maximum of 1,000 Datasets will be examined for matching downloads. If you suspect that some files are not present in the listing, consider filtering more tightly by keyword and/or using fewer states in your query.
 * The keywords search uses Wordpress's built-in search on the post title and the description, and is not very smart. A search for "2016, 2018" will not intelligently find all datasets tagged by either year, but would match only datasets with both phrases in the title. If you need something smarter to filter by download file type, etc. consider filtering the list client-side.
-
-Examples:
-
-```
-# return the list as a JSON-encoded array
-curl --output filelist.json 'https://redistrictingdatahub.org/wp-json/download/list?username=X&password=X&format=json&states=ca,or,wa,nv,ut,az,id'
-
-# return the list as CSV text
-curl --output filelist.csv 'https://redistrictingdatahub.org/wp-json/download/list?username=X&password=X&format=csv&states=ca,or,wa,nv,ut,az,id'
-
-# as above, but adding keyword filtering
-curl --output filelist.json 'https://redistrictingdatahub.org/wp-json/download/list?username=X&password=X&format=json&states=ca,or,wa,nv,ut,az,id&keywords=census tract,population,2018'
-```
 
 
 ## Downloading a File
